@@ -111,23 +111,11 @@ export default function OrdersTable({ orders }: { orders: AdminOrder[] }) {
               <div className="px-4 pb-4 text-sm flex flex-col gap-2">
                 <p className="opacity-70">{o.address_landmark}</p>
                 <div className="bg-cream rounded-lg p-3 flex flex-col gap-1">
-                  {o.order_items.map((item) =>
-                    item.is_bundle ? (
-                      <div key={item.id}>
-                        <p>
-                          Gift Box × {item.quantity} — {item.unit_price_lyd} د.ل each
-                        </p>
-                        <p className="opacity-60 text-xs ms-3">
-                          {item.bundle_details_json?.items?.map((i: any) => i.name_en).join(", ")}
-                          {item.bundle_details_json?.note ? ` — note: "${item.bundle_details_json.note}"` : ""}
-                        </p>
-                      </div>
-                    ) : (
-                      <p key={item.id}>
-                        Product × {item.quantity} — {item.unit_price_lyd} د.ل each
-                      </p>
-                    )
-                  )}
+                  {o.order_items.map((item) => (
+                    <p key={item.id}>
+                      Product × {item.quantity} — {item.unit_price_lyd} د.ل each
+                    </p>
+                  ))}
                   <div className="flex justify-between border-t border-hairline mt-1 pt-1">
                     <span>Subtotal</span>
                     <span>{o.subtotal_lyd} د.ل</span>

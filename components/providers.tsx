@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { translations, Lang, T } from "@/lib/translations";
 import { CartLine, Product, Variant } from "@/lib/types";
-import { BUNDLE_PRICE } from "@/lib/constants";
 
 // ---------------- Language ----------------
 type LangCtx = { lang: Lang; t: T; toggleLang: () => void };
@@ -44,7 +43,6 @@ type CartCtx = {
   openCart: () => void;
   closeCart: () => void;
   addProduct: (p: Product, v: Variant, lang: Lang, qty: number) => void;
-  addBundle: (items: { product: Product; variant: Variant }[], note: string) => void;
   updateQty: (key: string, delta: number) => void;
   removeLine: (key: string) => void;
   clearCart: () => void;
@@ -82,30 +80,6 @@ function CartProvider({ children }: { children: React.ReactNode }) {
     setIsOpen(true);
   };
 
-  const addBundle: CartCtx["addBundle"] = (items, note) => {
-    const key = `bundle-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setLines((prev) => [
-      ...prev,
-      {
-        key,
-        kind: "bundle",
-        name_en: "Gift Box",
-        name_ar: "علبة هدايا",
-        unit_price: BUNDLE_PRICE,
-        qty: 1,
-        note,
-        items: items.map(({ product, variant }) => ({
-          productId: product.id,
-          variantId: variant.id,
-          name_en: product.name_en,
-          name_ar: product.name_ar,
-          colorHex: variant.color_hex
-        }))
-      }
-    ]);
-    setIsOpen(true);
-  };
-
   const updateQty: CartCtx["updateQty"] = (key, delta) =>
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, qty: Math.max(1, l.qty + delta) } : l)));
 
@@ -120,7 +94,6 @@ function CartProvider({ children }: { children: React.ReactNode }) {
     openCart: () => setIsOpen(true),
     closeCart: () => setIsOpen(false),
     addProduct,
-    addBundle,
     updateQty,
     removeLine,
     clearCart: () => setLines([]),
@@ -139,7 +112,7 @@ export function useCart() {
 
 // ---------------- Catalog filter/search ----------------
 type FilterCtx = {
-  category: "all" | "plush" | "reversible" | "giftbox";
+  category: "all" | "plush" | "reversible";
   setCategory: (c: FilterCtx["category"]) => void;
   query: string;
   setQuery: (q: string) => void;

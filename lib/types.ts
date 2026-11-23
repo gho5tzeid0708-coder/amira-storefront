@@ -1,4 +1,4 @@
-export type Category = "plush" | "reversible" | "giftbox";
+export type Category = "plush" | "reversible";
 
 export type Variant = {
   id: string;
@@ -25,13 +25,7 @@ export type Product = {
   product_variants: Variant[];
 };
 
-export type BundleSlot = {
-  product: Product;
-  variant: Variant;
-};
-
-export type CartLine =
-  | {
+export type CartLine = {
       key: string;
       kind: "product";
       name_en: string;
@@ -43,16 +37,6 @@ export type CartLine =
       colorEn: string;
       colorAr: string;
       colorHex: string;
-    }
-  | {
-      key: string;
-      kind: "bundle";
-      name_en: string;
-      name_ar: string;
-      unit_price: number;
-      qty: number;
-      note: string;
-      items: { productId: string; variantId: string; name_en: string; name_ar: string; colorHex: string }[];
     };
 
 export type OrderStatus = "pending" | "confirmed" | "out_for_delivery" | "delivered" | "cancelled";
