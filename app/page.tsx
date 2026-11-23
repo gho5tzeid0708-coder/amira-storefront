@@ -4,7 +4,6 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ProductGrid from "@/components/ProductGrid";
-import BundleBuilder from "@/components/BundleBuilder";
 import CartDrawer from "@/components/CartDrawer";
 
 export const revalidate = 0; // always show current stock
@@ -25,7 +24,6 @@ export default async function HomePage() {
       <Navbar />
       <Hero />
       <ProductGrid products={safeProducts} />
-      <BundleBuilder products={safeProducts} />
       <footer className="text-center text-sm opacity-60 py-10">AMIRA — Tripoli, Libya</footer>
       <CartDrawer />
     </>

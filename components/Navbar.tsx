@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Search, Globe, Gift } from "lucide-react";
+import { ShoppingBag, Search, Globe } from "lucide-react";
 import { useLanguage, useCart, useFilter } from "./providers";
 import { CATEGORIES } from "@/lib/constants";
 
@@ -27,10 +27,6 @@ export default function Navbar() {
               {lang === "en" ? c.en : c.ar}
             </a>
           ))}
-          <a href="#gift-box" className="hover:text-wine flex items-center gap-1">
-            <Gift size={15} />
-            {t.giftBoxNav}
-          </a>
         </nav>
 
         <div className="flex items-center gap-1 border border-hairline rounded-full px-3 py-1.5 bg-white flex-1 min-w-[140px] max-w-xs">

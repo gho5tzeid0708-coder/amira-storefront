@@ -52,22 +52,10 @@ export default function CartDrawer() {
               <div className="flex flex-col gap-4 mb-5">
                 {lines.map((l) => (
                   <div key={l.key} className="flex gap-3 items-start border-b border-hairline pb-3">
-                    {l.kind === "product" ? (
-                      <div className="w-14 h-14 rounded-lg shrink-0" style={{ background: `linear-gradient(135deg, ${l.colorHex}33, ${l.colorHex}66)` }} />
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg shrink-0 grid grid-cols-2 overflow-hidden">
-                        {l.items.slice(0, 4).map((it, idx) => (
-                          <div key={idx} style={{ background: it.colorHex }} />
-                        ))}
-                      </div>
-                    )}
+                    <div className="w-14 h-14 rounded-lg shrink-0" style={{ background: `linear-gradient(135deg, ${l.colorHex}33, ${l.colorHex}66)` }} />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{lang === "en" ? l.name_en : l.name_ar}</p>
-                      {l.kind === "product" ? (
-                        <p className="text-xs opacity-60">{lang === "en" ? l.colorEn : l.colorAr}</p>
-                      ) : (
-                        <p className="text-xs opacity-60">{l.items.map((it) => (lang === "en" ? it.name_en : it.name_ar)).join(", ")}</p>
-                      )}
+                      <p className="text-xs opacity-60">{lang === "en" ? l.colorEn : l.colorAr}</p>
                       <p className="text-wine text-sm">{l.unit_price} د.ل</p>
                     </div>
                     <div className="flex items-center gap-2">

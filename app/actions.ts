@@ -75,38 +75,23 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
 
   if (orderErr || !order) return { ok: false, error: "order_insert_failed" };
 
-  const itemRows = lines.map((l) =>
-    l.kind === "product"
-      ? {
-          order_id: order.id,
-          product_id: l.productId,
-          variant_id: l.variantId,
-          is_bundle: false,
-          bundle_details_json: null,
-          quantity: l.qty,
-          unit_price_lyd: l.unit_price
-        }
-      : {
-          order_id: order.id,
-          product_id: null,
-          variant_id: null,
-          is_bundle: true,
-          bundle_details_json: { note: l.note, items: l.items },
-          quantity: l.qty,
-          unit_price_lyd: l.unit_price
-        }
-  );
+  const itemRows = lines.map((l) => ({
+    order_id: order.id,
+    product_id: l.productId,
+    variant_id: l.variantId,
+    is_bundle: false,
+    bundle_details_json: null,
+    quantity: l.qty,
+    unit_price_lyd: l.unit_price
+  }));
 
   const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
   if (itemsErr) return { ok: false, error: "items_insert_failed" };
 
-  // Decrement stock for every variant touched (individual lines + each bundle slot),
+  // Decrement stock for every variant touched.
   // via a SECURITY DEFINER function so the public insert flow doesn't need elevated access.
   const decrements: { variantId: string; qty: number }[] = [];
-  for (const l of lines) {
-    if (l.kind === "product") decrements.push({ variantId: l.variantId, qty: l.qty });
-    else for (const item of l.items) decrements.push({ variantId: item.variantId, qty: l.qty });
-  }
+  for (const l of lines) decrements.push({ variantId: l.variantId, qty: l.qty });
   await Promise.all(
     decrements.map((d) => supabase.rpc("decrement_stock", { p_variant_id: d.variantId, p_qty: d.qty }))
   );
