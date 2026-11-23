@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { LIBYAN_PHONE_REGEX } from "@/lib/constants";
 import { DELIVERY_AREAS, PICKUP_BRANCHES } from "@/lib/delivery-data";
 import { CartLine, FulfillmentType } from "@/lib/types";
@@ -46,7 +46,7 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const total = subtotal + deliveryFee;
   const orderNumber = `LY-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
 
   const addressLandmark =
     fulfillment === "delivery"

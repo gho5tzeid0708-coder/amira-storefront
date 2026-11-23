@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Product } from "@/lib/types";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Navbar from "@/components/Navbar";
@@ -10,7 +10,7 @@ import CartDrawer from "@/components/CartDrawer";
 export const revalidate = 0; // always show current stock
 
 export default async function HomePage() {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data: products } = await supabase
     .from("products")
     .select("*, product_variants(*)")
