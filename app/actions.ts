@@ -19,14 +19,28 @@ export type PlaceOrderInput = {
 
 export type PlaceOrderResult =
   | { ok: true; orderNumber: string; subtotal: number; deliveryFee: number; total: number }
-  | { ok: false; error: "name" | "phone" | "area" | "branch" | "address" | "empty" | "order_insert_failed" | "items_insert_failed" };
+  | { ok: false; error: "name" | "phone" | "area" | "branch" | "address" | "empty" | "stock" | "order_insert_failed" };
 
 export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResult> {
+  if (!input || typeof input !== "object") return { ok: false, error: "empty" };
   const { name, phone, fulfillment, areaId, femaleCourier, branchId, address, landmark, lines } = input;
 
   if (!name.trim()) return { ok: false, error: "name" };
   if (!LIBYAN_PHONE_REGEX.test(phone.trim())) return { ok: false, error: "phone" };
-  if (!lines.length) return { ok: false, error: "empty" };
+  if (!Array.isArray(lines) || !lines.length || lines.length > 50) return { ok: false, error: "empty" };
+  if (
+    lines.some(
+      (line) =>
+        !line ||
+        typeof line.productId !== "string" ||
+        typeof line.variantId !== "string" ||
+        !Number.isInteger(line.qty) ||
+        line.qty <= 0 ||
+        line.qty > 99
+    )
+  ) {
+    return { ok: false, error: "empty" };
+  }
 
   const area = fulfillment === "delivery" ? DELIVERY_AREAS.find((a) => a.id === areaId) : null;
   const branch = fulfillment === "pickup" ? PICKUP_BRANCHES.find((b) => b.id === branchId) : null;
@@ -42,8 +56,6 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
   const deliveryFee =
     fulfillment === "pickup" ? branch!.fee : useFemaleCourier ? (area!.womenFee as number) : area!.standardFee;
 
-  const subtotal = lines.reduce((s, l) => s + l.unit_price * l.qty, 0);
-  const total = subtotal + deliveryFee;
   const orderNumber = `LY-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
 
   const supabase = createAdminClient();
@@ -53,48 +65,51 @@ export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResu
       ? `${(address ?? "").trim()}${landmark?.trim() ? " — " + landmark.trim() : ""}`
       : landmark?.trim() || null;
 
-  const { data: order, error: orderErr } = await supabase
-    .from("orders")
-    .insert({
-      order_number: orderNumber,
-      customer_name: name.trim(),
-      phone: phone.trim(),
-      city: fulfillment === "delivery" ? area!.nameAr : null,
-      address_landmark: addressLandmark,
-      fulfillment_type: fulfillment,
-      female_courier: useFemaleCourier,
-      pickup_branch: fulfillment === "pickup" ? branch!.nameAr : null,
-      subtotal_lyd: subtotal,
-      delivery_fee_lyd: deliveryFee,
-      total_lyd: total,
-      payment_method: "COD",
-      status: "pending"
-    })
-    .select("id")
-    .single();
+  const { data, error } = await supabase.rpc("place_order_secure", {
+    p_order_number: orderNumber,
+    p_customer_name: name.trim(),
+    p_phone: phone.trim(),
+    p_fulfillment_type: fulfillment,
+    p_female_courier: useFemaleCourier,
+    p_city: fulfillment === "delivery" ? area!.nameAr : null,
+    p_pickup_branch: fulfillment === "pickup" ? branch!.nameAr : null,
+    p_address_landmark: addressLandmark,
+    p_delivery_fee_lyd: deliveryFee,
+    p_lines: lines.map((line) => ({
+      productId: line.productId,
+      variantId: line.variantId,
+      qty: line.qty
+    }))
+  });
 
-  if (orderErr || !order) return { ok: false, error: "order_insert_failed" };
+  if (error) {
+    if (error.message.includes("insufficient_stock") || error.message.includes("product_unavailable")) {
+      return { ok: false, error: "stock" };
+    }
+    return { ok: false, error: "order_insert_failed" };
+  }
 
-  const itemRows = lines.map((l) => ({
-    order_id: order.id,
-    product_id: l.productId,
-    variant_id: l.variantId,
-    is_bundle: false,
-    bundle_details_json: null,
-    quantity: l.qty,
-    unit_price_lyd: l.unit_price
-  }));
+  const result = data as {
+    order_number?: unknown;
+    subtotal_lyd?: unknown;
+    delivery_fee_lyd?: unknown;
+    total_lyd?: unknown;
+  } | null;
+  if (
+    !result ||
+    typeof result.order_number !== "string" ||
+    typeof result.subtotal_lyd !== "number" ||
+    typeof result.delivery_fee_lyd !== "number" ||
+    typeof result.total_lyd !== "number"
+  ) {
+    return { ok: false, error: "order_insert_failed" };
+  }
 
-  const { error: itemsErr } = await supabase.from("order_items").insert(itemRows);
-  if (itemsErr) return { ok: false, error: "items_insert_failed" };
-
-  // Decrement stock for every variant touched.
-  // via a SECURITY DEFINER function so the public insert flow doesn't need elevated access.
-  const decrements: { variantId: string; qty: number }[] = [];
-  for (const l of lines) decrements.push({ variantId: l.variantId, qty: l.qty });
-  await Promise.all(
-    decrements.map((d) => supabase.rpc("decrement_stock", { p_variant_id: d.variantId, p_qty: d.qty }))
-  );
-
-  return { ok: true, orderNumber, subtotal, deliveryFee, total };
+  return {
+    ok: true,
+    orderNumber: result.order_number,
+    subtotal: result.subtotal_lyd,
+    deliveryFee: result.delivery_fee_lyd,
+    total: result.total_lyd
+  };
 }

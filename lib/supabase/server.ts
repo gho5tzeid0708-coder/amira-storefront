@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// Used for public reads (products/variants) and for public inserts (orders).
-// Respects Row Level Security — never use this for admin-only data.
+// Used for public reads (products/variants). Checkout and admin writes run
+// through server-only actions with the service-role client.
 export function createClient() {
   const cookieStore = cookies();
   return createServerClient(

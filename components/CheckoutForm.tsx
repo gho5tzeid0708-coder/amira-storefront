@@ -132,6 +132,8 @@ export default function CheckoutForm({
       if (res.error === "area") fieldErrors.area = t.errArea;
       if (res.error === "branch") fieldErrors.branch = t.errBranch;
       if (res.error === "address") fieldErrors.address = t.errAddr;
+      if (res.error === "stock") fieldErrors.submit = t.errStock;
+      if (res.error === "order_insert_failed") fieldErrors.submit = t.errOrder;
       setErrors(fieldErrors);
       return;
     }
@@ -282,6 +284,7 @@ export default function CheckoutForm({
         </div>
       </div>
 
+      {errors.submit && <p className="text-sm text-red-600">{errors.submit}</p>}
       <button
         onClick={submit}
         disabled={submitting}

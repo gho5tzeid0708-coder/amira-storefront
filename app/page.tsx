@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { Product } from "@/lib/types";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Navbar from "@/components/Navbar";
@@ -9,12 +9,14 @@ import CartDrawer from "@/components/CartDrawer";
 export const revalidate = 0; // always show current stock
 
 export default async function HomePage() {
-  const supabase = createAdminClient();
-  const { data: products } = await supabase
+  const supabase = createClient();
+  const { data: products, error } = await supabase
     .from("products")
     .select("*, product_variants(*)")
     .eq("active", true)
     .order("category");
+
+  if (error) throw new Error(`Failed to load active products: ${error.message}`);
 
   const safeProducts = (products ?? []) as Product[];
 
